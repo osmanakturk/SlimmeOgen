@@ -1,0 +1,1 @@
+Dit project is gericht op kinderen en is gemaakt in Python met behulp van Django en OpenCV. Het is gemaakt met Python-opencv om kinderen informatie te geven over hoe de camera en de computer objecten waarnemen en om bij te dragen aan hun ontwikkeling.
