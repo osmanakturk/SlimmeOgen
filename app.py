@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, Response
-from modules import vingertellen, kleurenherkenning
+from modules import vingertellen, kleurenherkenning, bewegend_tekenen
 import cv2
 
 app = Flask(__name__)
@@ -35,6 +35,8 @@ def get_processor(name):
         return vingertellen.count_fingers
     elif name == "kleurenherkenning":
         return kleurenherkenning.detect_color
+    elif name == "bewegend-tekenen":
+        return bewegend_tekenen.bewegend_tekenen
     else:
         return lambda frame: frame
 
