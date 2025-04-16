@@ -26,19 +26,36 @@
             font-size: 20px;
             cursor: pointer;
         }
+        img {
+            max-width: 90%;
+            height: auto;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        
         <div class="vak">
-            <h2>Camera (origineel)</h2>
-            <img src="{{ url_for('video_feed_raw') }}" alt="Camera raw">
-        </div>
-        <div class="vak">
-            <h2>{{ functie|capitalize }} output</h2>
+            <h2>{{ functie|capitalize }} camera</h2>
             <img src="{{ url_for('video_feed_processed', naam=functie) }}" alt="Processed">
         </div>
+        <div class="vak">
+            <h2>Resultaat</h2>
+            <div id="resultaat">Wachten...</div>
+          </div>
     </div>
     <a class="terug" href="/">← Terug</a>
+
+    <script>
+        function fetchResult() {
+          fetch("/result/{{ functie }}")
+            .then(response => response.text())
+            .then(data => {
+              document.getElementById("resultaat").innerText = data;
+            });
+        }
+      
+        setInterval(fetchResult, 100);
+      </script>
 </body>
 </html>
