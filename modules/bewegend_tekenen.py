@@ -20,7 +20,7 @@ def bewegend_tekenen(frame):
 
     h, w, _ = frame.shape
 
-    # İlk karede canvas oluştur
+   
     if canvas is None:
         canvas = np.zeros_like(frame)
 
