@@ -1,84 +1,49 @@
 import cv2
-import numpy as np
 
 
-CONFIG_PATH = "models/yolov4-tiny.cfg"
-WEIGHTS_PATH = "models/yolov4-tiny.weights"
-NAMES_PATH = "models/coco.names"
+PROTOTXT_PATH = "models/MobileNetSSD_deploy.prototxt"
+MODEL_PATH = "models/MobileNetSSD_deploy.caffemodel"
+LABELS_PATH = "models/MobileNetSSD.txt"
 
 
-with open(NAMES_PATH, 'r') as f:
-    classes = [line.strip() for line in f.readlines()]
+with open(LABELS_PATH, "r") as f:
+    CLASSES = f.read().strip().split("\n")
 
 
-net = cv2.dnn.readNetFromDarknet(CONFIG_PATH, WEIGHTS_PATH)
-net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+COLORS = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 255, 255)]
 
 
-detected_objects = ""
+net = cv2.dnn.readNetFromCaffe(PROTOTXT_PATH, MODEL_PATH)
+
+result_text = ""
 
 def detect_objects(frame):
-    global detected_objects
+    global result_text
 
-    height, width = frame.shape[:2]
-
-    
-    blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416), swapRB=True, crop=False)
+    (h, w) = frame.shape[:2]
+    blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 0.007843, (300, 300), 127.5)
     net.setInput(blob)
+    detections = net.forward()
 
-    ln = net.getLayerNames()
-    output_layers = [ln[i - 1] for i in net.getUnconnectedOutLayers().flatten()]
+    objects = []
 
-    layer_outputs = net.forward(output_layers)
+    for i in range(detections.shape[2]):
+        confidence = detections[0, 0, i, 2]
 
-    boxes = []
-    confidences = []
-    class_ids = []
+        if confidence > 0.5:
+            idx = int(detections[0, 0, i, 1])
+            label = CLASSES[idx] if idx < len(CLASSES) else "Onbekend"
+            box = detections[0, 0, i, 3:7] * [w, h, w, h]
+            (startX, startY, endX, endY) = box.astype("int")
 
-   
-    for output in layer_outputs:
-        for detection in output:
-            scores = detection[5:]
-            class_id = np.argmax(scores)
-            confidence = scores[class_id]
+            cv2.rectangle(frame, (startX, startY), (endX, endY), COLORS[idx % len(COLORS)], 2)
+            cv2.putText(frame, label, (startX, startY - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx % len(COLORS)], 2)
 
-            if confidence > 0.5:
-                center_x = int(detection[0] * width)
-                center_y = int(detection[1] * height)
-                w = int(detection[2] * width)
-                h = int(detection[3] * height)
+            objects.append(label)
 
-                x = int(center_x - w / 2)
-                y = int(center_y - h / 2)
-
-                boxes.append([x, y, w, h])
-                confidences.append(float(confidence))
-                class_ids.append(class_id)
-
-    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
-
-    detected_labels = []
-
-    if len(indexes) > 0:
-        for i in indexes.flatten():
-            x, y, w, h = boxes[i]
-            label = str(classes[class_ids[i]])
-            confidence = confidences[i]
-            detected_labels.append(label)
-
-            color = (0, 255, 0)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-            cv2.putText(frame, f"{label} {int(confidence * 100)}%", (x, y - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
-
-    if detected_labels:
-        detected_objects = ", ".join(detected_labels)
-    else:
-        detected_objects = "Geen objecten gedetecteerd"
-
+    result_text = ", ".join(objects) if objects else "Geen objecten gevonden"
     return frame
 
-
 def get_result():
-    return detected_objects
+    return result_text
