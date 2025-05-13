@@ -18,8 +18,8 @@ app = Flask(__name__)
 #        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
 def gen_processed(processor):
-    #camera = cv2.VideoCapture('/dev/video0') # for raspberry pi
-    camera = cv2.VideoCapture(0)
+    camera = cv2.VideoCapture('/dev/video0') # for raspberry pi
+    #camera = cv2.VideoCapture(0)
     while True:
         success, frame = camera.read()
         if not success:
